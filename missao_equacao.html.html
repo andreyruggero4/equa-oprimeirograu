@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missão Equação: O Desafio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Nunito',sans-serif;background:#f1f5f9;touch-action:manipulation;user-select:none}
+  .bg-math{background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:30px 30px}
+  @keyframes popIn{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  .animate-pop{animation:popIn .3s cubic-bezier(.175,.885,.32,1.275) forwards}
+  @keyframes slideUp{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+  .animate-slide-up{animation:slideUp .4s ease-out forwards}
+  .fraction{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .25rem;line-height:1.1}
+  .fraction>span:first-child{border-bottom:3px solid currentColor;padding:0 .3rem;margin-bottom:.1rem}
+  .key{background:#fff;font-size:1.5rem;font-weight:900;color:#334155;padding:.75rem 0;border-radius:.75rem;border:2px solid #e2e8f0;box-shadow:0 1px 2px #0001}
+  .key:active{transform:scale(.95)}
+</style>
+</head>
+<body class="bg-math min-h-screen flex flex-col items-center justify-between text-slate-800">
+
+<!-- MENU -->
+<div id="hubScreen" class="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-4xl animate-pop">
+  <div class="text-center mb-6 mt-4">
+    <div class="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200 rotate-3 text-4xl">⚖️</div>
+    <h1 class="text-4xl md:text-5xl font-black text-indigo-700 tracking-tight mb-2">Missão <span class="text-emerald-500">Equação</span></h1>
+    <p class="text-base md:text-lg font-bold text-slate-600 max-w-2xl mx-auto px-4 bg-white/60 p-3 rounded-2xl border border-slate-200">
+      Resolva cada equação no caderno, confira o valor de x e conquiste as 3 estrelas de cada missão. Escolha seu desafio!
+    </p>
+    <div id="totalStars" class="mt-3 font-black text-amber-500 text-lg"></div>
+  </div>
+  <div id="levelGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full"></div>
+  <button onclick="openTut()" class="mt-8 px-6 py-3 bg-white text-indigo-600 font-black rounded-full border-2 border-indigo-200 shadow-sm hover:bg-indigo-50">📖 Ver Manual de Resolução</button>
+</div>
+
+<!-- JOGO -->
+<div id="gameScreen" class="hidden flex-1 w-full max-w-lg flex-col bg-white shadow-2xl sm:my-4 sm:rounded-[2rem] overflow-hidden relative">
+  <div id="levelHeader" class="p-4 pb-3 text-white font-black">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-3 text-lg">
+        <button onclick="returnToHub()" aria-label="Voltar ao menu" class="bg-black/20 hover:bg-black/40 w-9 h-9 rounded-full">←</button>
+        <span id="levelIcon"></span><span id="levelName"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="bg-black/20 px-3 py-1 rounded-full text-sm">Questão <span id="phaseCounter">1</span>/<span id="totalQ"></span></span>
+        <button onclick="openTut()" aria-label="Ajuda" class="bg-black/20 hover:bg-black/40 w-9 h-9 rounded-full">?</button>
+      </div>
+    </div>
+    <div class="h-2 bg-black/20 rounded-full mt-3 overflow-hidden"><div id="bar" class="h-full bg-white rounded-full transition-all duration-500" style="width:0"></div></div>
+  </div>
+
+  <div class="bg-amber-50 border-l-4 border-amber-400 p-3 mx-4 mt-4 rounded-r-xl shadow-sm">
+    <p class="text-sm font-bold text-amber-800 leading-tight">✏️ <strong>Regra do Caderno:</strong> copie a equação, resolva passo a passo e digite apenas o valor de x.</p>
+  </div>
+
+  <div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6">
+    <div class="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Descubra o valor de x</div>
+    <div id="equationDisplay" class="text-3xl sm:text-4xl font-black text-slate-800 mb-6 text-center min-h-[60px] flex items-center justify-center flex-wrap gap-x-2"></div>
+    <div class="bg-slate-100 w-full max-w-[280px] rounded-2xl p-4 border-4 border-slate-200 flex items-center justify-center gap-3 shadow-inner">
+      <span class="text-3xl font-black text-slate-400">x =</span>
+      <div id="inputDisplay" class="text-4xl font-black text-indigo-600 min-h-[40px] border-b-4 border-indigo-300 min-w-[80px] text-center"></div>
+    </div>
+  </div>
+
+  <div class="bg-slate-50 p-4 border-t-2 border-slate-200 grid grid-cols-4 gap-2 sm:gap-3">
+    <div id="kb" class="col-span-3 grid grid-cols-3 gap-2 sm:gap-3"></div>
+    <button onclick="check()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl shadow-[0_6px_0_#059669] active:shadow-none active:translate-y-[6px] transition-all flex flex-col items-center justify-center gap-1">
+      <span class="text-3xl">➤</span><span class="text-xs uppercase tracking-widest">Enviar</span>
+    </button>
+  </div>
+
+  <!-- Recompensa -->
+  <div id="animationScreen" class="absolute inset-0 bg-slate-900 z-40 hidden flex-col items-center justify-center p-6 text-center">
+    <h2 id="animTitle" class="text-3xl font-black text-white mb-4"></h2>
+    <div class="bg-white/10 rounded-3xl p-4 border-2 border-white/20"><canvas id="rewardCanvas" width="300" height="300" class="rounded-xl bg-slate-800 shadow-xl max-w-full"></canvas></div>
+    <div id="sum" class="hidden mt-4 text-white font-black animate-pop"></div>
+    <button id="nextLevelBtn" onclick="finishAnimation()" class="hidden mt-5 py-4 px-8 bg-white text-slate-900 font-black text-xl rounded-xl shadow-[0_5px_0_#cbd5e1] active:shadow-none active:translate-y-[5px] animate-pop">Continuar →</button>
+  </div>
+
+  <!-- Erro -->
+  <div id="feedbackModal" class="absolute inset-0 bg-slate-900/80 z-50 hidden flex-col justify-end">
+    <div class="bg-white rounded-t-3xl p-5 sm:p-8 animate-slide-up max-h-full overflow-y-auto">
+      <div class="flex items-center gap-4 mb-3">
+        <div class="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center text-2xl shrink-0">⚠️</div>
+        <div><h3 class="text-2xl font-black">Quase lá!</h3><p class="text-sm font-bold text-slate-500">Compare com o seu caderno:</p></div>
+      </div>
+      <div id="feedbackSteps" class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-200 mb-5 text-lg font-bold text-slate-700"></div>
+      <button onclick="closeFeedback()" class="w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white font-black text-xl rounded-xl shadow-[0_5px_0_#4338ca] active:shadow-none active:translate-y-[5px]">Entendi, tentar outra ↻</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual -->
+<div id="tutorialModal" class="fixed inset-0 bg-slate-900/80 z-[60] hidden items-center justify-center p-4">
+  <div class="bg-white w-full max-w-lg rounded-3xl p-6 animate-pop max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-start mb-4 border-b-2 border-slate-100 pb-2">
+      <h3 class="text-2xl font-black text-indigo-600">📖 Manual de Ajuda</h3>
+      <button onclick="closeTut()" aria-label="Fechar" class="text-slate-400 hover:text-rose-500 text-3xl leading-none">&times;</button>
+    </div>
+    <div id="tutBody" class="space-y-3"></div>
+    <button onclick="closeTut()" class="w-full mt-5 py-4 bg-indigo-500 text-white font-black text-lg rounded-xl">Entendi, vamos jogar!</button>
+  </div>
+</div>
+
+<footer class="p-4 text-center text-slate-400 font-bold text-xs uppercase tracking-widest shrink-0 w-full mt-auto">Desenvolvido por Andrey Farias Ruggero</footer>
+
+<script>
+const N = 8, KEY = 'missaoEquacaoEstrelas';
+const R = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const nz = (a,b) => { let v; do v = R(a,b); while(!v); return v; };
+const sgn = (p=.5) => Math.random()<p ? -1 : 1;
+const M = v => v<0 ? '−'+(-v) : ''+v;                 // número com sinal
+const P = v => v<0 ? `(${M(v)})` : M(v);              // negativo entre parênteses
+const X = (c,f=true) => { const t=(Math.abs(c)===1?'':Math.abs(c))+'x'; return f ? (c<0?'−':'')+t : ` ${c<0?'−':'+'} ${t}`; };
+const K = (c,f=true) => f ? M(c) : ` ${c<0?'−':'+'} ${Math.abs(c)}`;
+const side = (...t) => { let s=''; for (const [v,c] of t) { if(!c) continue; s += v==='x' ? X(c,!s) : K(c,!s); } return s||'0'; };
+const fr = (n,d) => `<span class="fraction"><span>${n}</span><span>${d}</span></span>`;
+const gcd = (a,b) => b ? gcd(b,a%b) : a, lcm = (a,b) => a/gcd(a,b)*b;
+const xr = t => t<.35 ? R(1,9) : nz(-12,12);          // valor de x (positivo no início)
+const co = (t,h=9) => R(2,h)*(t<.35 ? 1 : sgn(.25));  // coeficiente
+const par = (a,b) => `${M(a)}(x ${b<0?'−':'+'} ${Math.abs(b)})`;
+const ds = (a,b) => `${P(a)}·x + ${P(a)}·${P(b)}`;
+const DIST = 'Propriedade distributiva: o número de fora multiplica cada termo de dentro';
+
+// Monta a equação L = R (listas de termos ['x',c] ou ['k',c]) e o passo a passo
+function mk(L, Rt, o={}) {
+  const sm = (A,v) => A.reduce((s,t)=>t[0]===v?s+t[1]:s,0);
+  const dup = A => ['x','k'].some(v => A.filter(t=>t[0]===v).length>1);
+  let lx=sm(L,'x'), lk=sm(L,'k'), rx=sm(Rt,'x'), rk=sm(Rt,'k');
+  const html = o.html || `${side(...L)} = ${side(...Rt)}`;
+  const st = [[html,'']];
+  (o.pre||[]).forEach(p => st.push(p));
+  if (!o.pre && (dup(L)||dup(Rt))) st.push([`${side(['x',lx],['k',lk])} = ${side(['x',rx],['k',rk])}`,'Reduza os termos semelhantes']);
+  if (!lx) {
+    st.push([`${side(['x',rx],['k',rk])} = ${side(['x',lx],['k',lk])}`,'Troque os lados da igualdade para o x ficar à esquerda']);
+    [lx,lk,rx,rk] = [rx,rk,lx,lk];
+  }
+  const den = lx-rx, num = rk-lk;
+  if (rx || lk) st.push([`${side(['x',lx],['x',-rx])} = ${side(['k',rk],['k',-lk])}`,'Passe cada termo para o outro lado com a operação inversa (troca o sinal)']);
+  if (den!==1 && (rx||lk)) st.push([`${X(den)} = ${M(num)}`,'Reduza os termos semelhantes']);
+  if (den!==1) st.push([`x = ${M(num)} ÷ ${P(den)}`,'Divida os dois lados pelo número que acompanha o x']);
+  st.push([`x = ${M(num/den)}`,'']);
+  return {html, st, x: num/den};
+}
+
+// MODOS: cada um tem vários modelos de equação, liberados conforme as questões avançam
+const e3 = (a,b,c,x) => mk([['x',a],['k',b]],[['x',c],['k',(a-c)*x+b]]);
+const G3 = [
+  t => { const c=R(1,5); return e3(c+R(1,5), nz(-12,12), c, xr(t)); },
+  t => { const a=R(1,5); return e3(a, nz(-12,12), a+R(1,5), xr(t)); },
+  t => { const a=R(2,6), c=nz(-5,5), b=nz(-12,12), x=xr(t), s=a+c; if(!s) return G3[0](t);
+         return mk([['x',a],['k',b],['x',c]],[['k',s*x+b]]); },
+  t => { const a=R(1,6), c=R(1,6), b=nz(-12,12), x=xr(t);
+         return mk([['x',a],['k',b]],[['k',(a+c)*x+b],['x',-c]]); },
+  t => { const a=nz(-6,6); let c=nz(-6,6); if(a===c) c=-c; return e3(a, nz(-12,12), c, xr(t)); }
+];
+const G4 = [
+  t => { const a=co(t,6), b=nz(-9,9), c=a*(xr(t)+b);
+         return mk([['x',a],['k',a*b]],[['k',c]],{html:`${par(a,b)} = ${M(c)}`,
+           pre:[[`${ds(a,b)} = ${M(c)}`,DIST],[`${side(['x',a],['k',a*b])} = ${M(c)}`,'Calcule os produtos']]}); },
+  t => { const a=co(t,6), b=nz(-9,9), k=nz(-9,9), c=a*(xr(t)+b)+k;
+         return mk([['x',a],['k',a*b+k]],[['k',c]],{html:`${par(a,b)} ${k<0?'−':'+'} ${Math.abs(k)} = ${M(c)}`,
+           pre:[[`${ds(a,b)}${K(k,false)} = ${M(c)}`,DIST],[`${side(['x',a],['k',a*b],['k',k])} = ${M(c)}`,'Calcule os produtos'],
+                [`${side(['x',a],['k',a*b+k])} = ${M(c)}`,'Reduza os termos semelhantes']]}); },
+  t => { const a=R(2,6)*sgn(.2); let c=nz(-5,6); if(c===a) c=a+1; const b=nz(-9,9), x=xr(t), d=a*(x+b)-c*x, rhs=side(['x',c],['k',d]);
+         return mk([['x',a],['k',a*b]],[['x',c],['k',d]],{html:`${par(a,b)} = ${rhs}`,
+           pre:[[`${ds(a,b)} = ${rhs}`,DIST],[`${side(['x',a],['k',a*b])} = ${rhs}`,'Calcule os produtos']]}); },
+  t => { let a,b,c,d,x,ok=false;
+         for (let i=0;i<500&&!ok;i++) { a=R(2,6); c=R(2,6)*sgn(); if(a===c) continue; x=xr(t); d=nz(-9,9);
+           const s=(c-a)*x+c*d; if(s%a) continue; b=s/a; ok = b!==0 && Math.abs(b)<=12; }
+         if(!ok) return G4[2](t);
+         return mk([['x',a],['k',a*b]],[['x',c],['k',c*d]],{html:`${par(a,b)} = ${par(c,d)}`,
+           pre:[[`${ds(a,b)} = ${ds(c,d)}`,'Propriedade distributiva nos dois lados'],
+                [`${side(['x',a],['k',a*b])} = ${side(['x',c],['k',c*d])}`,'Calcule os produtos']]}); }
+];
+const G5 = [
+  t => { const a=R(2,9), k=nz(-8,8), x=a*k;
+         return {html:fr('x',a)+` = ${M(k)}`, x, st:[[`x/${a} = ${M(k)}`,''],[`x = ${M(k)} · ${a}`,'Multiplique os dois lados pelo denominador'],[`x = ${M(x)}`,'']]}; },
+  t => { const a=R(2,6), k=nz(-6,6), b=nz(-15,15), c=k+b, x=a*k;
+         return {html:fr('x',a)+`${K(b,false)} = ${M(c)}`, x, st:[[`x/${a}${K(b,false)} = ${M(c)}`,''],
+           [`x/${a} = ${side(['k',c],['k',-b])}`,'Passe o número para o outro lado com a operação inversa'],[`x/${a} = ${M(k)}`,'Calcule'],
+           [`x = ${M(k)} · ${a}`,'Multiplique os dois lados pelo denominador'],[`x = ${M(x)}`,'']]}; },
+  t => { const a=R(2,6), c=nz(-8,8), b=nz(-15,15), n=side(['x',1],['k',b]), r=mk([['x',1],['k',b]],[['k',c*a]]);
+         return {html:fr(n,a)+` = ${M(c)}`, x:r.x, st:[[`(${n})/${a} = ${M(c)}`,''],[`${n} = ${M(c)} · ${a}`,'Multiplique os dois lados pelo denominador'],...r.st.slice(1)]}; },
+  t => { const b=R(2,6), a=R(2,7), k=nz(-6,6), c=a*k, n=M(a)+'x', r=mk([['x',a]],[['k',c*b]]);
+         return {html:fr(n,b)+` = ${M(c)}`, x:b*k, st:[[`${n}/${b} = ${M(c)}`,''],[`${n} = ${M(c)} · ${b}`,'Multiplique os dois lados pelo denominador'],...r.st.slice(1)]}; },
+  t => { let a,b; do { a=R(2,9); b=R(2,9); } while(a===b||lcm(a,b)>36); const s=sgn(.35), L=lcm(a,b), x=L*nz(-3,3), c=x/a+s*x/b, op=s<0?'−':'+', lx=L/a+s*L/b;
+         return {html:fr('x',a)+` ${op} `+fr('x',b)+` = ${M(c)}`, x, st:[[`x/${a} ${op} x/${b} = ${M(c)}`,''],[`mmc(${a}, ${b}) = ${L}`,'Descubra o MMC dos denominadores'],
+           [`${L/a}x ${op} ${L/b}x = ${M(c)} · ${L}`,'Multiplique todos os termos pelo MMC (as frações somem)'],[`${X(lx)} = ${M(c*L)}`,'Reduza os termos semelhantes'],
+           [`x = ${M(c*L)} ÷ ${P(lx)}`,'Divida os dois lados pelo número que acompanha o x'],[`x = ${M(x)}`,'']]}; }
+];
+const b2 = t => t<.35 ? R(1,15) : nz(-20,20);
+const G1 = [
+  t => { const x=xr(t); let a=nz(-15,15); if(t<.35&&x+a<=0) a=-a; return mk([['x',1],['k',a]],[['k',x+a]]); },
+  t => { const x=xr(t), a=co(t); return mk([['x',a]],[['k',a*x]]); },
+  t => { const x=xr(t); let a=nz(-15,15); if(t<.35&&x+a<=0) a=-a; return mk([['k',a],['x',1]],[['k',x+a]]); },
+  t => { const x=xr(t), a=nz(-15,15); return mk([['k',x+a]],[['x',1],['k',a]]); },
+  t => { const x=nz(-12,12); return mk([['x',-1]],[['k',-x]]); }
+];
+const G2 = [
+  t => { const x=xr(t), a=co(t), b=b2(t); return mk([['x',a],['k',b]],[['k',a*x+b]]); },
+  t => { const x=xr(t), a=co(t), b=b2(t); return mk([['k',b],['x',a]],[['k',a*x+b]]); },
+  t => { const x=xr(t), a=co(t), b=b2(t); return mk([['k',a*x+b]],[['x',a],['k',b]]); },
+  t => { const x=xr(t), a=-R(2,9), b=nz(-15,15); return mk([['x',a],['k',b]],[['k',a*x+b]]); },
+  t => { const x=nz(-9,9), a=R(2,9)*sgn(); return mk([['x',a],['k',-a*x]],[['k',0]]); }
+];
+
+// Animações de recompensa
+const ctx = document.getElementById('rewardCanvas').getContext('2d');
+const LV = {
+ 1:{n:'O Construtor',e:'🧱',bg:'bg-amber-400',bd:'border-amber-400',hv:'bg-amber-50',tag:'Fácil • Blocos',m:'x + a = b | ax = b | b = x + a | −x = b',g:G1,
+    t:'Estrutura Concluída!',max:100,step:2,draw:p=>{ctx.fillStyle='#f59e0b';ctx.strokeStyle='#b45309';ctx.lineWidth=2;const n=Math.floor(p/100*25);let c=0;
+      for(let r=0;r<5;r++)for(let i=0;i<5;i++){if(c>=n)break;const x=i*60+(r%2?-30:0),y=300-(r+1)*30;ctx.fillRect(x,y,60,30);ctx.strokeRect(x,y,60,30);c++;}}},
+ 2:{n:'O Arremesso',e:'🏀',bg:'bg-orange-500',bd:'border-orange-500',hv:'bg-orange-50',tag:'Médio • Basquete',m:'ax + b = c | b + ax = c | c = ax + b | −ax + b = c | ax + b = 0',g:G2,
+    t:'Cesta de Três Pontos!',max:140,step:2,draw:p=>{ctx.fillStyle='#cbd5e1';ctx.fillRect(250,50,10,100);ctx.strokeStyle='#ef4444';ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(210,120);ctx.lineTo(250,120);ctx.stroke();const t=Math.min(p,100)/100;
+      let x=(1-t)*(1-t)*30+2*(1-t)*t*130+t*t*230,y=(1-t)*(1-t)*250+2*(1-t)*t*20+t*t*120;if(p>100){x=230;y=120+(p-100)*3;}
+      ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);ctx.fillStyle='#f97316';ctx.fill();ctx.stroke();}},
+ 3:{n:'O Cofre',e:'🔐',bg:'bg-slate-700',bd:'border-slate-700',hv:'bg-slate-100',tag:'Difícil • Detetive',m:'ax + b = cx + d | termos semelhantes | d − cx',g:G3,
+    t:'Cofre Aberto!',max:110,step:1,draw:p=>{ctx.fillStyle='#fbbf24';ctx.fillRect(120,120,60,60);const off=p>50?(p-50)*2:0;
+      ctx.fillStyle='#94a3b8';ctx.strokeStyle='#475569';ctx.lineWidth=8;
+      ctx.beginPath();ctx.arc(150-off,150,80,Math.PI/2,Math.PI*1.5);ctx.lineTo(150-off,230);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.arc(150+off,150,80,-Math.PI/2,Math.PI/2);ctx.lineTo(150+off,70);ctx.fill();ctx.stroke();}},
+ 4:{n:'Missão Espacial',e:'🚀',bg:'bg-purple-500',bd:'border-purple-500',hv:'bg-purple-50',tag:'Parênteses • Foguete',m:'a(x + b) = c | a(x + b) + k = c | a(x + b) = cx + d | a(x + b) = c(x + d)',g:G4,
+    t:'Lançamento Perfeito!',max:100,step:1,draw:p=>{const y=250-p*3;ctx.fillStyle='#f8fafc';ctx.fillRect(130,y,40,80);
+      ctx.fillStyle='#ef4444';ctx.beginPath();ctx.moveTo(130,y);ctx.lineTo(150,y-40);ctx.lineTo(170,y);ctx.fill();
+      ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.moveTo(135,y+80);ctx.lineTo(150,y+80+Math.random()*40+20);ctx.lineTo(165,y+80);ctx.fill();}},
+ 5:{n:'Calibração',e:'🤖',bg:'bg-emerald-500',bd:'border-emerald-500',hv:'bg-emerald-50',tag:'Frações • Robótica',m:'x/a = b | x/a + b = c | (x + b)/a = c | ax/b = c | x/a + x/b = c',g:G5,
+    t:'Sistemas Calibrados!',max:120,step:1,draw:p=>{ctx.fillStyle='#64748b';ctx.fillRect(90,100,120,100);ctx.fillRect(145,60,10,40);
+      ctx.fillStyle=p>40?(Math.floor(p/10)%2?'#059669':'#10b981'):'#334155';ctx.beginPath();ctx.arc(150,50,15,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=p>70?'#10b981':'#334155';ctx.fillRect(110,130,25,20);ctx.fillRect(165,130,25,20);
+      ctx.fillStyle='#334155';ctx.fillRect(120,170,60,10);}}
+};
+
+// ESTADO
+let lvl=1, qi=0, hits=0, errs=0, eq=null, inp='', raf=0, locked=false, lastHtml='', stars={};
+try { stars = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e) {}
+const $ = id => document.getElementById(id);
+const ui = {hub:$('hubScreen'),game:$('gameScreen'),header:$('levelHeader'),icon:$('levelIcon'),name:$('levelName'),phase:$('phaseCounter'),bar:$('bar'),
+  eq:$('equationDisplay'),input:$('inputDisplay'),fb:$('feedbackModal'),steps:$('feedbackSteps'),tut:$('tutorialModal'),anim:$('animationScreen'),
+  next:$('nextLevelBtn'),title:$('animTitle'),sum:$('sum')};
+const show = (el,on,d='flex') => { el.classList.toggle('hidden',!on); el.classList.toggle(d,on); };
+const isOpen = el => !el.classList.contains('hidden');
+const stars3 = n => '★'.repeat(n)+'☆'.repeat(3-n);
+
+function renderHub() {
+  $('levelGrid').innerHTML = Object.entries(LV).map(([k,l]) => `
+    <button onclick="startLevel(${k})" class="bg-white border-4 ${l.bd} rounded-3xl p-5 text-left hover:${l.hv} active:scale-95 transition-transform shadow-sm ${k==5?'md:col-start-2':''}">
+      <div class="flex justify-between items-start mb-2"><span class="text-4xl">${l.e}</span><span class="text-amber-500 font-black tracking-widest">${stars3(stars[k]||0)}</span></div>
+      <h3 class="font-black text-xl">${k}. ${l.n}</h3>
+      <p class="font-bold text-sm text-slate-500 mt-1">${l.tag}<br><span class="text-xs">${l.m}</span></p>
+    </button>`).join('');
+  $('totalStars').innerText = `⭐ ${Object.values(stars).reduce((a,b)=>a+b,0)}/${Object.keys(LV).length*3} estrelas`;
+}
+
+function genQuestion() {
+  const g = LV[lvl].g, al = g.slice(0, Math.floor(qi*g.length/N)+1), t = qi/(N-1);
+  let q;
+  for (let i=0;i<8;i++) {
+    q = (Math.random()<.5 ? al[al.length-1] : al[R(0,al.length-1)])(t);
+    if (q.html!==lastHtml && Number.isInteger(q.x)) break;
+  }
+  lastHtml = q.html; return q;
+}
+
+function startLevel(l) {
+  cancelAnimationFrame(raf); lvl=l; qi=hits=errs=0; locked=false;
+  const c = LV[l];
+  show(ui.hub,false); show(ui.game,true); show(ui.anim,false); show(ui.fb,false);
+  ui.header.className = `p-4 pb-3 text-white font-black ${c.bg}`;
+  ui.icon.innerText = c.e; ui.name.innerText = c.n; $('totalQ').innerText = N;
+  newQuestion();
+}
+function returnToHub() {
+  cancelAnimationFrame(raf); locked=false;
+  show(ui.game,false); show(ui.anim,false); show(ui.fb,false); show(ui.hub,true); renderHub();
+}
+function newQuestion() {
+  inp=''; ui.input.innerText=''; locked=false;
+  eq = genQuestion(); ui.eq.innerHTML = eq.html;
+  ui.phase.innerText = qi+1; ui.bar.style.width = (qi/N*100)+'%';
+  ui.eq.classList.remove('animate-pop'); void ui.eq.offsetWidth; ui.eq.classList.add('animate-pop');
+}
+
+function press(k) {
+  if (locked) return;
+  if (k==='<') inp = inp.slice(0,-1);
+  else if (k==='-') inp = inp.startsWith('-') ? inp.slice(1) : '-'+inp;
+  else if (inp.replace('-','').length<4) inp += k;
+  ui.input.innerText = inp.replace('-','−');
+}
+function check() {
+  if (locked || inp==='' || inp==='-') return;
+  locked = true;
+  if (parseInt(inp,10)===eq.x) {
+    hits++; qi++;
+    ui.input.innerHTML = '<span class="text-emerald-500">✓</span>';
+    ui.bar.style.width = (qi/N*100)+'%';
+    setTimeout(() => qi>=N ? showAnimation() : newQuestion(), 600);
+  } else {
+    errs++;
+    ui.steps.innerHTML = eq.st.map(([e,n],i) => `<div class="${i?'mt-2':''} ${i===eq.st.length-1?'text-indigo-600':''}">${n?`<div class="text-xs font-bold text-slate-400">${n}</div>`:''}<div class="font-mono">${e}</div></div>`).join('');
+    show(ui.fb,true);
+  }
+}
+function closeFeedback() { show(ui.fb,false); newQuestion(); }
+function openTut() { show(ui.tut,true); }
+function closeTut() { show(ui.tut,false); }
+
+function showAnimation() {
+  const c = LV[lvl], s = errs===0 ? 3 : errs<=2 ? 2 : 1;
+  stars[lvl] = Math.max(stars[lvl]||0, s);
+  try { localStorage.setItem(KEY, JSON.stringify(stars)); } catch(e) {}
+  ui.title.innerText = c.t;
+  ui.sum.innerHTML = `<div class="text-4xl text-amber-400 tracking-widest">${stars3(s)}</div><div class="text-sm mt-1">${hits} acertos • ${errs} ${errs===1?'erro':'erros'}</div>`;
+  ui.sum.classList.add('hidden'); ui.next.classList.add('hidden'); show(ui.anim,true);
+  let p = 0;
+  const f = () => {
+    ctx.clearRect(0,0,300,300); c.draw(p); p += c.step;
+    if (p<=c.max) raf = requestAnimationFrame(f); else { ui.sum.classList.remove('hidden'); ui.next.classList.remove('hidden'); }
+  };
+  f();
+}
+function finishAnimation() { returnToHub(); }
+
+// Teclado virtual e teclado físico
+$('kb').innerHTML = ['1','2','3','4','5','6','7','8','9','-','0','<'].map(k =>
+  `<button data-k="${k}" class="key ${k==='<'?'!bg-rose-100 !text-rose-600 !border-rose-200':''} ${k==='-'?'!bg-slate-200':''}" aria-label="${k==='<'?'Apagar':k==='-'?'Sinal de menos':k}">${k==='<'?'⌫':k==='-'?'−':k}</button>`).join('');
+$('kb').onclick = e => { const b = e.target.closest('button'); if (b) press(b.dataset.k); };
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') return closeTut();
+  if (isOpen(ui.tut) || isOpen(ui.hub)) return;
+  if (isOpen(ui.anim)) { if (e.key==='Enter' && isOpen(ui.next)) finishAnimation(); return; }
+  if (isOpen(ui.fb)) { if (e.key==='Enter') closeFeedback(); return; }
+  if (/^[0-9]$/.test(e.key)) press(e.key);
+  else if (e.key==='-' || e.key==='−') press('-');
+  else if (e.key==='Backspace') press('<');
+  else if (e.key==='Enter') check();
+});
+
+// Manual
+$('tutBody').innerHTML = [
+  ['indigo','⚖️ A Regra da Balança','O sinal de <b>=</b> é o centro da balança. O objetivo é deixar o <b>x</b> sozinho. O que você faz de um lado (somar, subtrair, multiplicar, dividir), faz igual do outro.'],
+  ['amber','🔁 Operação inversa','Quem está somando passa subtraindo; quem está multiplicando passa dividindo. Ex.: <b>x + 5 = 9 → x = 9 − 5</b>. Se aparecer <b>−x = 4</b>, multiplique os dois lados por −1: <b>x = −4</b>.'],
+  ['slate','🧮 Termos semelhantes','Junte os termos com x de um lado e os números do outro. Ex.: <b>5x + 2 = 2x + 11 → 5x − 2x = 11 − 2 → 3x = 9</b>. Também dá para reduzir: <b>2x + 3x = 5x</b>.'],
+  ['purple','🚀 Propriedade distributiva','Multiplique o número de fora por todos de dentro: <b>2(x + 3) = 2x + 6</b>. Cuidado com o sinal: <b>−3(x − 2) = −3x + 6</b>.'],
+  ['emerald','🤖 Frações','Se o x está dividido (<b>x/2 = 5</b>), multiplique os dois lados pelo denominador: <b>x = 5 · 2</b>. Com denominadores diferentes, use o <b>MMC</b> para eliminar as frações.'],
+  ['sky','✅ Confira sempre','Substitua o x encontrado na equação original. Se os dois lados derem o mesmo valor, você acertou!']
+].map(([c,t,b]) => `<div class="bg-${c}-50 p-4 rounded-xl border border-${c}-100"><h4 class="font-black text-${c}-800 mb-1">${t}</h4><p class="text-sm font-bold text-slate-600">${b}</p></div>`).join('');
+
+renderHub();
+</script>
+</body>
+</html>
